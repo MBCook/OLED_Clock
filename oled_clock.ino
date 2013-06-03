@@ -1,3 +1,5 @@
+#include <Keypad.h>
+
 // Pins we use for the Chronodot
 
 // SDA and SCL are already defined
@@ -29,6 +31,27 @@ const char keypadKeys[KEYPAD_ROWS][KEYPAD_COLS] = {
   {'7','8','9'},
   {'*','0','#'}
 };
-const byte keypadRowPins[KEYPAD_ROWS]    = {A5, A4, A3, A2};  // Pins for the rows
-const byte keypadColumnPins[KEYPAD_COLS] = {13, 12, 11};      // Pins for the columns
+byte keypadRowPins[KEYPAD_ROWS]    = {A5, A4, A3, A2};  // Pins for the rows
+byte keypadColumnPins[KEYPAD_COLS] = {13, 12, 11};      // Pins for the columns
 
+// Keypad setup
+
+Keypad keypad = Keypad(makeKeymap(keypadKeys), keypadRowPins, keypadColumnPins, KEYPAD_ROWS, KEYPAD_COLS );
+
+// Main functions
+
+void setup(){
+  Serial.begin(9600);
+  
+  while (!Serial) ;  // Wait for the serial monitor to come onlin
+  
+  Serial.println("hi");
+}
+
+void loop(){
+  char key = keypad.getKey();
+
+  if (key != NO_KEY){
+    Serial.println(key);
+  }
+}
