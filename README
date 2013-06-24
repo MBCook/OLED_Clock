@@ -1,0 +1,5 @@
+I'm making a simple digitial clock for myself that's easy to set, handles daylight savings, and looks nice from a distance. Parts list:
+
+* Arduino Micro
+* Chronodot
+* 2 Adafruit 1.3" 128x64 OLED displays
