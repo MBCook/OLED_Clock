@@ -1,4 +1,9 @@
+#include <Arduino.h>
+#include <Wire.h>
+#include <Chronodot.h>
 #include <Keypad.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 // Pins we use for the Chronodot
 
@@ -38,20 +43,81 @@ byte keypadColumnPins[KEYPAD_COLS] = {13, 12, 11};      // Pins for the columns
 
 Keypad keypad = Keypad(makeKeymap(keypadKeys), keypadRowPins, keypadColumnPins, KEYPAD_ROWS, KEYPAD_COLS );
 
+// Objects for the two LCDs
+
+Adafruit_SSD1306 leftDisplay = Adafruit_SSD1306(SPI_DATA, SPI_CLOCK, SPI_DC, LEFT_OLED_RST, LEFT_OLED_CS);
+Adafruit_SSD1306 rightDisplay = Adafruit_SSD1306(SPI_DATA, SPI_CLOCK, SPI_DC, RIGHT_OLED_RST, RIGHT_OLED_CS);
+
+// And our Chronodot
+
+ChronoTime myTime;
+
 // Main functions
 
 void setup(){
-  Serial.begin(9600);
+	Wire.begin();
   
-  while (!Serial) ;  // Wait for the serial monitor to come onlin
+	// Reset the two screens
   
-  Serial.println("hi");
+	leftDisplay.clearDisplay();
+  
+	leftDisplay.begin();
+	leftDisplay.display();
+  
+	rightDisplay.begin();
+	rightDisplay.display();
 }
 
 void loop(){
-  char key = keypad.getKey();
+	// Get the current time
 
-  if (key != NO_KEY){
-    Serial.println(key);
-  }
+	Chronodot::getTime(&myTime);
+
+	// Write the date info to the left screen
+	
+	leftDisplay.clearDisplay();
+	
+	leftDisplay.setTextSize(2);
+	leftDisplay.setTextColor(WHITE);
+	leftDisplay.setCursor(0, 0);
+	
+	leftDisplay.print(myTime.getMonth());
+	leftDisplay.print("/");
+	
+	if (myTime.getDayOfMonth() < 10) {
+		leftDisplay.print("0");
+	}
+	
+	leftDisplay.print(myTime.getDayOfMonth());
+	leftDisplay.print("/");
+	
+	leftDisplay.print(myTime.getYear() + 2000);
+	
+	leftDisplay.display();
+	
+	// Write the time info to the right screen
+	
+	rightDisplay.clearDisplay();
+	
+	rightDisplay.setTextSize(2);
+	rightDisplay.setTextColor(WHITE);
+	rightDisplay.setCursor(0, 0);
+	
+	rightDisplay.print(myTime.getHours());
+	rightDisplay.print(":");
+	
+	if (myTime.getMinutes() < 10) {
+		rightDisplay.print("0");
+	}
+	
+	rightDisplay.print(myTime.getMinutes());
+	rightDisplay.print(":");
+	
+	if (myTime.getSeconds() < 10) {
+		rightDisplay.print("0");
+	}
+	
+	rightDisplay.print(myTime.getSeconds());
+	
+	rightDisplay.display();
 }
