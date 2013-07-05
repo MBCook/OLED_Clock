@@ -5,6 +5,13 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
+// The digit data, and a buffer
+
+#include "digit_data.h"
+
+byte digitWidth;                   // Height is a constant from the digit_data.h file
+byte digitBuffer[MAX_DIGIT_BYTES];
+
 // Pins we use for the Chronodot
 
 // SDA and SCL are already defined
@@ -120,4 +127,18 @@ void loop(){
 	rightDisplay.print(myTime.getSeconds());
 	
 	rightDisplay.display();
+}
+
+void loadDigit(byte digit) {
+	// Read the data out of progmem into the buffer
+	
+	digitWidth = pgm_read_byte(&digitWidths[digit]);
+	
+	uint16_t dataLength = pgm_read_word(&digitSizes[digit]);
+	
+	prog_uint8_t *correctArray = (prog_uint8_t *)pgm_read_word(&digitData[digit]);
+	
+	for (int i = 0; i < dataLength; i++) {
+		digitBuffer[i] = pgm_read_word(&correctArray[i]);
+	}
 }
