@@ -673,7 +673,7 @@ prog_uint8_t digitColonData[] PROGMEM = {
 
 // An array of pointers to that data
 
-prog_uint8_t *digitData[] PROGMEM = {
+prog_uint8_t *digitData[] = {
 	digit0Data, digit1Data, digit2Data, digit3Data, digit4Data, digit5Data,
 	digit6Data, digit7Data, digit8Data, digit9Data, digitColonData
 };

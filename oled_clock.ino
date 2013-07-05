@@ -10,7 +10,7 @@
 #include "digit_data.h"
 
 byte digitWidth;                   // Height is a constant from the digit_data.h file
-byte digitBuffer[MAX_DIGIT_BYTES];
+prog_uint8_t *digitSource;
 
 // Pins we use for the Chronodot
 
@@ -48,7 +48,7 @@ byte keypadColumnPins[KEYPAD_COLS] = {13, 12, 11};      // Pins for the columns
 
 // Keypad setup
 
-Keypad keypad = Keypad(makeKeymap(keypadKeys), keypadRowPins, keypadColumnPins, KEYPAD_ROWS, KEYPAD_COLS );
+//Keypad keypad = Keypad(makeKeymap(keypadKeys), keypadRowPins, keypadColumnPins, KEYPAD_ROWS, KEYPAD_COLS );
 
 // Objects for the two LCDs
 
@@ -64,7 +64,11 @@ ChronoTime myTime;
 void setup(){
 	Wire.begin();
   
-	// Reset the two screens
+//        Serial.begin(9600);
+  
+//        while (!Serial) {};
+  
+  	// Reset the two screens
   
 	leftDisplay.clearDisplay();
   
@@ -100,45 +104,46 @@ void loop(){
 	
 	leftDisplay.print(myTime.getYear() + 2000);
 	
-	leftDisplay.display();
+	leftDisplay.print("\n");
 	
-	// Write the time info to the right screen
+	leftDisplay.print(myTime.getHours());
+	leftDisplay.print(":");
+	
+	if (myTime.getMinutes() < 10) {
+		leftDisplay.print("0");
+	}
+	
+	leftDisplay.print(myTime.getMinutes());
+	leftDisplay.print(":");
+	
+	if (myTime.getSeconds() < 10) {
+		leftDisplay.print("0");
+	}
+	
+	leftDisplay.print(myTime.getSeconds());
+	
+	leftDisplay.display();
 	
 	rightDisplay.clearDisplay();
 	
-	rightDisplay.setTextSize(2);
-	rightDisplay.setTextColor(WHITE);
-	rightDisplay.setCursor(0, 0);
+	// Now we're going to test our font. First, we'll get the lowest digit of seconds
 	
-	rightDisplay.print(myTime.getHours());
-	rightDisplay.print(":");
+	uint8_t lowestDigit = myTime.getSeconds() % 10;
 	
-	if (myTime.getMinutes() < 10) {
-		rightDisplay.print("0");
-	}
+	// Now we'll load that digit up
 	
-	rightDisplay.print(myTime.getMinutes());
-	rightDisplay.print(":");
+	loadDigit(lowestDigit);
+
+	// Now we'll draw our digit there
 	
-	if (myTime.getSeconds() < 10) {
-		rightDisplay.print("0");
-	}
-	
-	rightDisplay.print(myTime.getSeconds());
-	
+        rightDisplay.drawBitmap(0, 0, digitSource, digitWidth, digitHeight, 1);
+
 	rightDisplay.display();
 }
 
 void loadDigit(byte digit) {
-	// Read the data out of progmem into the buffer
+	// Get the width out of progmem, setup the source pointer
 	
 	digitWidth = pgm_read_byte(&digitWidths[digit]);
-	
-	uint16_t dataLength = pgm_read_word(&digitSizes[digit]);
-	
-	prog_uint8_t *correctArray = (prog_uint8_t *)pgm_read_word(&digitData[digit]);
-	
-	for (int i = 0; i < dataLength; i++) {
-		digitBuffer[i] = pgm_read_word(&correctArray[i]);
-	}
+	digitSource = digitData[digit];
 }
