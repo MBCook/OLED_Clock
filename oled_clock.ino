@@ -136,9 +136,9 @@ void displayHours() {
 	// Let's figure out the digits we need
 	
 	byte tensDigit = lastHour / 10;
-	byte onesDigit = lastMinute % 10;
+	byte onesDigit = lastHour % 10;
 	
-	// Keep track of our X position, display left to right
+	// Keep track of our X position
 	
 	byte currentX = 127;
 	byte currentY = (64 - digitHeight) / 2;
@@ -149,7 +149,7 @@ void displayHours() {
 	
 	currentX -= digitWidth;
 	
-	rightDisplay.drawBitmap(currentX, currentY, digitSource, digitWidth, digitHeight, 1);
+	leftDisplay.drawBitmap(currentX, currentY, digitSource, digitWidth, digitHeight, 1);
 	
 	currentX -= DISPLAY_PADDING;
 	
@@ -159,7 +159,7 @@ void displayHours() {
 	
 		currentX -= digitWidth;
 		
-		rightDisplay.drawBitmap(currentX, currentY, digitSource, digitWidth, digitHeight, 1);
+		leftDisplay.drawBitmap(currentX, currentY, digitSource, digitWidth, digitHeight, 1);
 	}
 
 	// That's it, send it out
