@@ -186,7 +186,7 @@ void displayMinutes() {
 	rightDisplay.drawBitmap(currentX, currentY, digitSource, digitWidth, digitHeight, 1);
 	
 	currentX += digitWidth;
-	currentX += DISPLAY_PADDING;
+	currentX += 5 * DISPLAY_PADDING;	// To make it look symmetrical due to inter-LCD gap
 	
 	loadDigit(tensDigit);
 	
