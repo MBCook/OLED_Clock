@@ -12,6 +12,8 @@
 byte digitWidth;                   // Height is a constant from the digit_data.h file
 prog_uint8_t *digitSource;
 
+const byte DISPLAY_PADDING = 5;
+
 // Pins we use for the Chronodot
 
 // SDA and SCL are already defined
@@ -33,6 +35,11 @@ const byte LEFT_OLED_CS   = 6;     // The left OLED's chip select pin
 const byte RIGHT_OLED_RST = 5;     // The right OLED's reset pin
 const byte RIGHT_OLED_CS  = 7;     // The right OLED's chip select pin
 
+// Time keeping data so we know when we need to refresh the screen
+
+byte lastHour;
+byte lastMinute;
+
 // Keypad specific constants
 
 const byte KEYPAD_ROWS    = 4;
@@ -48,7 +55,7 @@ byte keypadColumnPins[KEYPAD_COLS] = {13, 12, 11};      // Pins for the columns
 
 // Keypad setup
 
-//Keypad keypad = Keypad(makeKeymap(keypadKeys), keypadRowPins, keypadColumnPins, KEYPAD_ROWS, KEYPAD_COLS );
+Keypad keypad = Keypad(makeKeymap(keypadKeys), keypadRowPins, keypadColumnPins, KEYPAD_ROWS, KEYPAD_COLS );
 
 // Objects for the two LCDs
 
@@ -59,16 +66,23 @@ Adafruit_SSD1306 rightDisplay = Adafruit_SSD1306(SPI_DATA, SPI_CLOCK, SPI_DC, RI
 
 ChronoTime myTime;
 
+// Pre-definitions of functions so we can keep setup and loop at the top
+
+void loadDigit(byte digit);
+void displayHours();
+void displayMinutes();
+
 // Main functions
 
 void setup(){
 	Wire.begin();
   
-//        Serial.begin(9600);
+  	// Reset the timekeeping bytes, so a redisplay will be forced
+  	
+  	lastHour = 255;
+  	lastMinute = 255;
   
-//        while (!Serial) {};
-  
-  	// Reset the two screens
+	// Clear the displays  
   
 	leftDisplay.clearDisplay();
   
@@ -84,61 +98,30 @@ void loop(){
 
 	Chronodot::getTime(&myTime);
 
-	// Write the date info to the left screen
+	// Get the bits we care about, update time as necessary
 	
-	leftDisplay.clearDisplay();
+	byte currentHour = myTime.getHours();
 	
-	leftDisplay.setTextSize(2);
-	leftDisplay.setTextColor(WHITE);
-	leftDisplay.setCursor(0, 0);
-	
-	leftDisplay.print(myTime.getMonth());
-	leftDisplay.print("/");
-	
-	if (myTime.getDayOfMonth() < 10) {
-		leftDisplay.print("0");
-	}
-	
-	leftDisplay.print(myTime.getDayOfMonth());
-	leftDisplay.print("/");
-	
-	leftDisplay.print(myTime.getYear() + 2000);
-	
-	leftDisplay.print("\n");
-	
-	leftDisplay.print(myTime.getHours());
-	leftDisplay.print(":");
-	
-	if (myTime.getMinutes() < 10) {
-		leftDisplay.print("0");
-	}
-	
-	leftDisplay.print(myTime.getMinutes());
-	leftDisplay.print(":");
-	
-	if (myTime.getSeconds() < 10) {
-		leftDisplay.print("0");
-	}
-	
-	leftDisplay.print(myTime.getSeconds());
-	
-	leftDisplay.display();
-	
-	rightDisplay.clearDisplay();
-	
-	// Now we're going to test our font. First, we'll get the lowest digit of seconds
-	
-	uint8_t lowestDigit = myTime.getSeconds() % 10;
-	
-	// Now we'll load that digit up
-	
-	loadDigit(lowestDigit);
+	if (currentHour > 12)
+		currentHour -= 12;		// We'll stick with 12 hour mode
+	else if (currentHour == 0)
+		currentHour = 12;
 
-	// Now we'll draw our digit there
-	
-        rightDisplay.drawBitmap(0, 0, digitSource, digitWidth, digitHeight, 1);
+	byte currentMinute = myTime.getMinutes();
 
-	rightDisplay.display();
+	// Do the checks
+	
+	if (currentHour != lastHour) {
+		lastHour = currentHour;
+		
+		displayHours();
+	}
+	
+	if (currentMinute != lastMinute) {
+		lastMinute = currentMinute;
+		
+		displayMinutes();
+	}
 }
 
 void loadDigit(byte digit) {
@@ -146,4 +129,78 @@ void loadDigit(byte digit) {
 	
 	digitWidth = pgm_read_byte(&digitWidths[digit]);
 	digitSource = digitData[digit];
+}
+
+void displayHours() {
+	// We're going to do this right to left so things appear centered between the two LCDs
+	// Let's figure out the digits we need
+	
+	byte tensDigit = lastHour / 10;
+	byte onesDigit = lastMinute % 10;
+	
+	// Keep track of our X position, display left to right
+	
+	byte currentX = 127;
+	byte currentY = (64 - digitHeight) / 2;
+	
+	leftDisplay.clearDisplay();
+	
+	loadDigit(onesDigit);
+	
+	currentX -= digitWidth;
+	
+	rightDisplay.drawBitmap(currentX, currentY, digitSource, digitWidth, digitHeight, 1);
+	
+	currentX -= DISPLAY_PADDING;
+	
+	if (tensDigit > 0) {
+		if (tensDigit != onesDigit)
+			loadDigit(tensDigit);
+	
+		currentX -= digitWidth;
+		
+		rightDisplay.drawBitmap(currentX, currentY, digitSource, digitWidth, digitHeight, 1);
+	}
+
+	// That's it, send it out
+	
+	leftDisplay.display();	
+}
+
+void displayMinutes() {
+	// We'll display a colon and then the minutes.
+	// Let's figure out the digits we need
+	
+	byte tensDigit = lastMinute / 10;
+	byte onesDigit = lastMinute % 10;
+	
+	// Keep track of our X position, display left to right
+	
+	byte currentX = 0;
+	byte currentY = (64 - digitHeight) / 2;
+	
+	rightDisplay.clearDisplay();
+	
+	loadDigit(COLON);
+	
+	rightDisplay.drawBitmap(currentX, currentY, digitSource, digitWidth, digitHeight, 1);
+	
+	currentX += digitWidth;
+	currentX += DISPLAY_PADDING;
+	
+	loadDigit(tensDigit);
+	
+	rightDisplay.drawBitmap(currentX, currentY, digitSource, digitWidth, digitHeight, 1);
+
+	currentX += digitWidth;
+	currentX += DISPLAY_PADDING;
+
+	if (tensDigit != onesDigit)
+		loadDigit(onesDigit);		// Avoid the load if we can
+
+	rightDisplay.drawBitmap(currentX, currentY, digitSource, digitWidth, digitHeight, 1);
+	
+	// That's it, send it out
+	
+	rightDisplay.display();	
 }

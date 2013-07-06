@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-const byte COLON = 11;
+const byte COLON = 10;
 const byte MAX_DIGIT_BYTES = 285;
 
 const extern byte digitHeight;
